@@ -25,7 +25,10 @@ app.post(URI, async (req,res) => {
     const text = req.body.message.text;
     console.log(text);
 
-    handleNotificationInGivenMinutes(chatID, text);
+    if(handleNotificationInGivenMinutes(chatID, text))
+    {
+        return res.send();
+    }
 
     await axios.post(`${TELEGRAM_API}/sendMessage`, {
        chat_id: chatID,
@@ -53,8 +56,11 @@ const handleNotificationInGivenMinutes = async (chatID, text) => {
         const remindContent = text.split('za')[0];
         console.log("Notification content: ", remindContent);
         
-        remindInHowManyMinutes(minutes, chatID, remindContent);
+        await remindInHowManyMinutes(minutes, chatID, remindContent);
+        return true;
     }
+
+    return false;
 }
 
 const remindInHowManyMinutes = async (minutes, chatID, text) =>
@@ -91,7 +97,6 @@ const remindInHowManyMinutes = async (minutes, chatID, text) =>
         chat_id: chatID,
         text: "Dodano przypomnienie!" 
      });
-     return res.send();
 };
 
 
