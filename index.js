@@ -31,8 +31,10 @@ app.post(URI, async (req,res) => {
             chat_id: chatID,
             text: "Nie rozumiem o co Ci chodzi.." 
          });
+         console.log("Not found command!");
     }
 
+    console.log("Return response");
     return res.send();
 })
 
