@@ -81,7 +81,7 @@ const remindInHowManyMinutes = async (minutes, chatID, text) =>
     currDate = new Date();
     console.log("Date of server: " + currDate);
 
-    currDate.setMinutes ( currDate.getMinutes() + 2 );
+    currDate.setMinutes ( currDate.getMinutes() + minutes );
     
     console.log("Date of remind: ", currDate);
 
