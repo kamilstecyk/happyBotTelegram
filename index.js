@@ -25,14 +25,16 @@ app.post(URI, async (req,res) => {
     const text = req.body.message.text;
     console.log(text);
 
-    if(!handleNotificationInGivenMinutes(chatID, text))
+    if(await handleNotificationInGivenMinutes(chatID, text))
     {
-        await axios.post(`${TELEGRAM_API}/sendMessage`, {
-            chat_id: chatID,
-            text: "Nie rozumiem o co Ci chodzi.." 
-         });
-         console.log("Not found command!");
+        return res.send();
     }
+
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+        chat_id: chatID,
+        text: "Nie rozumiem o co Ci chodzi.." 
+     });
+     console.log("Not found command!");
 
     console.log("Return response");
     return res.send();
