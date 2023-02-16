@@ -25,15 +25,13 @@ app.post(URI, async (req,res) => {
     const text = req.body.message.text;
     console.log(text);
 
-    if(handleNotificationInGivenMinutes(chatID, text))
+    if(!handleNotificationInGivenMinutes(chatID, text))
     {
-        return res.send();
+        await axios.post(`${TELEGRAM_API}/sendMessage`, {
+            chat_id: chatID,
+            text: "Nie rozumiem o co Ci chodzi.." 
+         });
     }
-
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-       chat_id: chatID,
-       text: "Nie rozumiem o co Ci chodzi.." 
-    });
 
     return res.send();
 })
