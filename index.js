@@ -19,6 +19,10 @@ const init = async () => {
     console.log(res.data);
 };
 
+//TODO 
+// setting reminders at exact time
+// setting reminders at exact date
+
 app.post(URI, async (req,res) => {
 
     const chatID = req.body.message.chat.id;
@@ -81,7 +85,7 @@ const remindInHowManyMinutes = async (minutes, chatID, text) =>
     currDate = new Date();
     console.log("Date of server: " + currDate);
 
-    currDate.setMinutes ( currDate.getMinutes() + minutes );
+    currDate.setMinutes ( currDate.getMinutes() + parseInt(minutes) );
     
     console.log("Date of remind: ", currDate);
 
