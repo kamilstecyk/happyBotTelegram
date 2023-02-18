@@ -2,12 +2,13 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const axios = require('axios');
-const schedule = require('node-schedule');
-
-const {TOKEN, SERVER_URL} = process.env;
-const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
-const URI = `/webhook/${TOKEN}`;
-const WEBHOOK_URL = SERVER_URL + URI;
+const handleNotificationInGivenMinutes = require('./notificationsInMinutesHandler');
+const handleNotificationInGivenHours = require('./notificationsInHoursHandler');
+const handleNotificationInGivenDays = require('./notificationsInDaysHandler');
+const handleNotificationInGivenDaysAndSpecifiedTime = require('./notificationsInDaysAndSpecifiedTimeHandler');
+const handleNotificationTodayAtSpecifiedTime = require('./notificationsTodayAtSpecifiedTimeHandler');
+const getJoke = require('./jokesHandler');
+const { TELEGRAM_API, WEBHOOK_URL, URI } = require('./config');
 
 const app = express();
 
@@ -27,18 +28,63 @@ app.post(URI, async (req,res) => {
 
     const chatID = req.body.message.chat.id;
     const text = req.body.message.text;
-    console.log(text);
+    console.log("Received message: ", text);
 
-    if(await handleNotificationInGivenMinutes(chatID, text))
-    {
+    if(text.toLowerCase()  === "pomoc"){
+        const messageContent = `Polecenia, które na razie rozumiem :)) 
+            - Przypomnienie za daną ilość minut
+            - Przypomnienie za daną ilość godzin
+            - Przypomnienie za daną ilość dni
+            - Przypomnienie za daną ilość dni o danej godzinie
+            - Przypomnienie w obecnym dniu o danej godzinie
+            - Odpowiedź na tajemnicze pytanie kim jest Maksiu?
+            - Opowiedz dowcip/żart ( po angielsku )
+
+        Śmiało zadawaj mi polecenia, w miarę możliwości postaram się je wykonać. Jeśli mi się uda to będę happy :))
+        `;
+
+        sendMessageToTelegramUser(chatID, messageContent);
         return res.send();
     }
 
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-        chat_id: chatID,
-        text: "Nie rozumiem o co Ci chodzi.." 
-     });
-     console.log("Not found command!");
+    else if(text.toLowerCase() === ( "opowiedz dowcip" || "opowiedz żart" )){
+        const data = await getJoke();
+            
+        console.log(data.question);
+        console.log(data.answer);
+
+        const jokeContent = data.question + "\n" + "- " + data.answer;
+        sendMessageToTelegramUser(chatID, jokeContent);
+        return res.send();
+    }
+
+    else if(text.toLowerCase() === "kim jest maksiu?"){
+        sendMessageToTelegramUser(chatID, "Jest stópkarzem :o");
+        return res.send();
+    }
+
+    else if(await handleNotificationInGivenMinutes(chatID, text)){
+        return res.send();
+    }
+
+    else if(await handleNotificationInGivenHours(chatID, text)){
+        return res.send();
+    }
+
+    else if(await handleNotificationInGivenDaysAndSpecifiedTime(chatID, text)){
+        return res.send();
+    }
+
+    else if(await handleNotificationInGivenDays(chatID, text)){
+        return res.send();
+    }
+
+    else if(await handleNotificationTodayAtSpecifiedTime(chatID, text)){
+        return res.send();
+    }
+
+    sendMessageToTelegramUser(chatID, "Nie rozumiem o co Ci chodzi...");
+    console.log("Not found command!");
 
     console.log("Return response");
     return res.send();
@@ -49,61 +95,14 @@ app.listen(process.env.PORT || 5000, async()=>{
     await init();
 });
 
-const handleNotificationInGivenMinutes = async (chatID, text) => {
-    const regex = /.* za [1-9][0-9]* minut[eęy]?/g;
-    if(text.match(regex))
-    {
-        console.log("I have receied order to remind in specified minutes!");
-    
-        const minutes = text.match(/\d+/)[0] // "3"
-        console.log(minutes);
-
-        //Notification
-        const remindContent = text.split('za')[0];
-        console.log("Notification content: ", remindContent);
-        
-        await remindInHowManyMinutes(minutes, chatID, remindContent);
-        return true;
-    }
-
-    return false;
-}
-
-const remindInHowManyMinutes = async (minutes, chatID, text) =>
-{
-    if(minutes <= 0)
-    {
-        await axios.post(`${TELEGRAM_API}/sendMessage`, {
-            chat_id: chatID,
-            text: "Nie mozna ustawic powiadomienia w przeszlosci, wpisz poprawna ilosc minut." 
-         });
-
-         console.log("Message error has just been sent!");
-         return res.send();
-    }
-
-    currDate = new Date();
-    console.log("Date of server: " + currDate);
-
-    currDate.setMinutes ( currDate.getMinutes() + parseInt(minutes) );
-    
-    console.log("Date of remind: ", currDate);
-
-    const job = schedule.scheduleJob(currDate, async function(){
-        await axios.post(`${TELEGRAM_API}/sendMessage`, {
-            chat_id: chatID,
-            text: text 
-         });
-
-        console.log("Remind has just been sent!");
-    });
-
-    console.log("Added cron job");
+const sendMessageToTelegramUser = async (chatID, content) => {
     await axios.post(`${TELEGRAM_API}/sendMessage`, {
         chat_id: chatID,
-        text: "Dodano przypomnienie!" 
+        text: content 
      });
-};
+     console.log("Send message to user!");
+}
+
 
 
 
